@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>LunaPeri Map DevTool</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f5f5f7;
+            color: #333;
+            padding: 20px;
+        }
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .app-logo {
+            height: 32px;
+        }
+
+        .app-title {
+            font-size: 20px;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+        }
+        .canvas-container {
+            position: relative;
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 5px;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: linear-gradient(180deg, #007aff, #005ecb);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background: #005ecb;
+        }
+
+        input {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        /* Tile Legend */
+        .tile-legend {
+            display: flex;
+            gap: 20px;
+            padding: 10px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .tile-sample {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            border-radius: 5px;
+        }
+
+        /* Image Controls */
+        .image-controls {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            margin-bottom: 10px;
+        }
+        .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.company-logo {
+    height: 128px;
+    margin-left: auto;
+}
+
+.tool-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tool-btn.active {
+            background: linear-gradient(180deg, #007aff, #005ecb);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <div class="app-title">LunaPeri: Map Development Tool v.0.0.0.1</div>
+        <img src="lunaperiLogo.png" alt="Company Logo" class="company-logo">
+    </div>
+    <p>Press 1-5 to select tile type, Click & Drag to paint, Press "E" to toggle Erase Mode</p>
+    
+    <div class="tile-legend">
+        <div><div class="tile-sample" style="background-color: brown;"></div> 1: Floor</div>
+        <div style="margin-left: 15px;"><div class="tile-sample" style="background-color: blue;"></div> 2: Platform</div>
+        <div style="margin-left: 15px;"><div class="tile-sample" style="background-color: gray;"></div> 3: Wall</div>
+        <div style="margin-left: 15px;"><div class="tile-sample" style="background-color: purple;"></div> 4: Cutscene</div>
+        <div style="margin-left: 15px;"><div class="tile-sample" style="background-color: green;"></div> 5: Ladder</div>
+    </div>
+    
+    <p>Selected Tile: <span id="selectedTile">1 (Floor)</span></p>
+    <p>Erase Mode: <span id="eraseModeText">OFF</span></p>
+
+    <div class="controls">
+        <label for="mapRows">Rows:</label>
+        <input type="number" id="mapRows" value="42" min="1">
+        <label for="mapColumns">Columns:</label>
+        <input type="number" id="mapColumns" value="128" min="1">
+        <button id="applySizeBtn">Apply Size</button>
+    </div>
+
+    <div class="image-controls">
+        <h3>Background Layers</h3>
+        <div>
+            <label for="backgroundImage">Background Image:</label>
+            <input type="file" id="backgroundImage" accept="image/*">
+            <button id="clearBackgroundBtn">Clear</button>
+        </div>
+        <div>
+            <label for="tilesImage">Tileground Image:</label>
+            <input type="file" id="tilesImage" accept="image/*">
+            <button id="clearTilesBtn">Clear</button>
+        </div>
+        <div>
+            <label for="foregroundImage">Foreground Image:</label>
+            <input type="file" id="foregroundImage" accept="image/*">
+            <button id="clearForegroundBtn">Clear</button>
+        </div>
+        <div>
+            <label for="imageOpacity">Layer Opacity:</label>
+            <input type="range" id="imageOpacity" min="0" max="1" step="0.1" value="0.5">
+            <span id="opacityValue">0.5</span>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="backgroundCanvas"></canvas>
+        <canvas id="tilesCanvas"></canvas>
+        <canvas id="foregroundCanvas"></canvas>
+        <canvas id="mapCanvas"></canvas>
+        <div id="canvasSpacer" class="canvas-spacer"></div>
+    </div>
+    <br>
+    <div class="controls">
+        <button id="eraseModeBtn">Toggle Erase Mode</button>
+        <button id="exportBtn">Export Map</button>
+        <input type="file" id="importFile" />
+        <button id="importBtn">Import Map</button>
+    </div>
+
+    <div class="tool-selector">
+        <button class="tool-btn active" id="paintTool">Paint</button>
+        <button class="tool-btn" id="rectTool">Rectangle</button>
+        <button class="tool-btn" id="rectFillTool">Rectangle Fill</button>
+        <button class="tool-btn" id="lineTool">Line</button>
+    </div>
+    
+    <p>Selected Tile: <span id="selectedTile">1 (Floor)</span></p>
+    <p>Erase Mode: <span id="eraseModeText">OFF</span></p>
+    <p>Current Tool: <span id="currentToolText">Paint</span></p>
+
+    <script>
+        const mapCanvas = document.getElementById("mapCanvas");
+        const ctx = mapCanvas.getContext("2d");
+        const backgroundCanvas = document.getElementById("backgroundCanvas");
+        const backgroundCtx = backgroundCanvas.getContext("2d");
+        const tilesCanvas = document.getElementById("tilesCanvas");
+        const tilesCtx = tilesCanvas.getContext("2d");
+        const foregroundCanvas = document.getElementById("foregroundCanvas");
+        const foregroundCtx = foregroundCanvas.getContext("2d");
+        const canvasSpacer = document.getElementById("canvasSpacer");
+        
+        const selectedTileText = document.getElementById("selectedTile");
+        const eraseModeText = document.getElementById("eraseModeText");
+        const mapRowsInput = document.getElementById("mapRows");
+        const mapColumnsInput = document.getElementById("mapColumns");
+        const applySizeBtn = document.getElementById("applySizeBtn");
+        const opacitySlider = document.getElementById("imageOpacity");
+        const opacityValue = document.getElementById("opacityValue");
+        
+        const tileSize = 16;
+
+
+
+        let rows = parseInt(mapRowsInput.value);
+        let columns = parseInt(mapColumnsInput.value);
+        let mapData = [];
+
+        let currentTool = 'paint';
+        let startX, startY;
+        let isDrawing = false;
+        let tempCanvas, tempCtx;
+        let selectedTile = "1";
+        let eraseMode = false;
+        let backgroundImage = null;
+        let tilesImage = null;
+        let foregroundImage = null;
+
+        function createTempCanvas() {
+            tempCanvas = document.createElement('canvas');
+            tempCanvas.width = mapCanvas.width;
+            tempCanvas.height = mapCanvas.height;
+            tempCanvas.style.position = 'absolute';
+            tempCanvas.style.top = mapCanvas.style.top;
+            tempCanvas.style.left = mapCanvas.style.left;
+            tempCanvas.style.pointerEvents = 'none';
+            mapCanvas.parentElement.appendChild(tempCanvas);
+            tempCtx = tempCanvas.getContext('2d');
+        }
+
+        function removeTempCanvas() {
+            if (tempCanvas) {
+                tempCanvas.remove();
+                tempCanvas = null;
+                tempCtx = null;
+            }
+        }
+
+        const tools = {
+            paint: document.getElementById('paintTool'),
+            rect: document.getElementById('rectTool'),
+            rectFill: document.getElementById('rectFillTool'),
+            line: document.getElementById('lineTool')
+        };
+
+        Object.values(tools).forEach(toolBtn => {
+            toolBtn.addEventListener('click', function() {
+                Object.values(tools).forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentTool = this.id.replace('Tool', '');
+                document.getElementById('currentToolText').textContent = 
+                    currentTool.charAt(0).toUpperCase() + currentTool.slice(1);
+                isDrawing = false;
+                removeTempCanvas();
+            });
+        });
+        
+        function initializeMap() {
+            rows = parseInt(mapRowsInput.value);
+            columns = parseInt(mapColumnsInput.value);
+            mapData = Array(rows).fill().map(() => Array(columns).fill("0"));
+            resizeCanvases();
+            drawGrid();
+        }
+        
+        function resizeCanvases() {
+            const labelSpace = 20;
+            const width = columns * tileSize + labelSpace;
+            const height = rows * tileSize + labelSpace;
+            
+            mapCanvas.width = width;
+            mapCanvas.height = height;
+            backgroundCanvas.width = width;
+            backgroundCanvas.height = height;
+            tilesCanvas.width = width;
+            tilesCanvas.height = height;
+            foregroundCanvas.width = width;
+            foregroundCanvas.height = height;
+
+            canvasSpacer.style.width = width + "px";
+            canvasSpacer.style.height = height + "px";
+            
+            drawBackgroundLayers();
+            drawGrid();
+        }
+
+        function drawGrid() {
+            const labelSpace = 20;
+            ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+
+            ctx.font = "12px Arial";
+            ctx.fillStyle = "black";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            // (X-axis)
+            for (let x = 0; x < columns; x++) {
+                if (x % 5 === 0) {
+                    let textX = x * tileSize + tileSize / 2 + labelSpace;
+                    ctx.fillText(x, textX, labelSpace / 2);
+                }
+            }
+            //(Y-axis)
+            ctx.textAlign = "right";
+            for (let y = 0; y < rows; y++) {
+                if (y % 5 === 0) {
+                    let textY = y * tileSize + tileSize / 2 + labelSpace;
+                    ctx.fillText(y, labelSpace - 5, textY);
+                }
+            }
+            ctx.textAlign = "center";
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < columns; x++) {
+                    let drawX = x * tileSize + labelSpace;
+                    let drawY = y * tileSize + labelSpace;
+
+                    ctx.strokeStyle = "#ddd";
+                    ctx.strokeRect(drawX, drawY, tileSize, tileSize);
+                    drawTile(x, y, mapData[y][x], drawX, drawY);
+                }
+            }
+        }
+
+        function drawTile(x, y, type, drawX, drawY) {
+            if (type === "1") ctx.fillStyle = "rgba(165, 42, 42, 0.7)"; // Floor
+            else if (type === "2") ctx.fillStyle = "rgba(0, 0, 255, 0.7)"; // Platform)
+            else if (type === "3") ctx.fillStyle = "rgba(128, 128, 128, 0.7)"; // Wall
+            else if (type === "4") ctx.fillStyle = "rgba(128, 0, 128, 0.7)"; // Cutscene
+            else if (type === "5") ctx.fillStyle = "rgba(0, 128, 0, 0.7)"; // Ladder
+            else return;
+            ctx.fillRect(drawX, drawY, tileSize, tileSize);
+        }
+        
+        function drawBackgroundLayers() {
+            const opacity = parseFloat(opacitySlider.value);
+            const labelSpace = 20;
+            
+            backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            tilesCtx.clearRect(0, 0, tilesCanvas.width, tilesCanvas.height);
+            foregroundCtx.clearRect(0, 0, foregroundCanvas.width, foregroundCanvas.height);
+            
+            if (backgroundImage) {
+                backgroundCtx.globalAlpha = opacity;
+                backgroundCtx.drawImage(backgroundImage, 
+                    labelSpace, labelSpace, 
+                    columns * tileSize, rows * tileSize);
+                backgroundCtx.globalAlpha = 1.0;
+            }
+            
+            if (tilesImage) {
+                tilesCtx.globalAlpha = opacity;
+                tilesCtx.drawImage(tilesImage, 
+                    labelSpace, labelSpace, 
+                    columns * tileSize, rows * tileSize);
+                tilesCtx.globalAlpha = 1.0;
+            }
+            
+            if (foregroundImage) {
+                foregroundCtx.globalAlpha = opacity;
+                foregroundCtx.drawImage(foregroundImage, 
+                    labelSpace, labelSpace, 
+                    columns * tileSize, rows * tileSize);
+                foregroundCtx.globalAlpha = 1.0;
+            }
+        }
+
+        function updateTile(e) {
+            const rect = mapCanvas.getBoundingClientRect();
+            const labelSpace = 20;
+
+            const x = Math.floor((e.clientX - rect.left - labelSpace) / tileSize);
+            const y = Math.floor((e.clientY - rect.top - labelSpace) / tileSize);
+
+            if (x >= 0 && x < columns && y >= 0 && y < rows) {
+                mapData[y][x] = eraseMode ? "0" : selectedTile;
+                drawGrid();
+            }
+        }
+
+        mapCanvas.addEventListener("mousedown", (e) => {
+            const rect = mapCanvas.getBoundingClientRect();
+            const labelSpace = 20;
+
+            startX = Math.floor((e.clientX - rect.left - labelSpace) / tileSize);
+            startY = Math.floor((e.clientY - rect.top - labelSpace) / tileSize);
+
+            if (startX < 0 || startX >= columns || startY < 0 || startY >= rows) return;
+
+            isDrawing = true;
+
+            if (currentTool !== 'paint') {
+                createTempCanvas();
+            }
+        });
+
+        mapCanvas.addEventListener("mousemove", (e) => {
+            if (!isDrawing) return;
+
+            const rect = mapCanvas.getBoundingClientRect();
+            const labelSpace = 20;
+
+            const currentX = Math.floor((e.clientX - rect.left - labelSpace) / tileSize);
+            const currentY = Math.floor((e.clientY - rect.top - labelSpace) / tileSize);
+
+            if (currentX < 0 || currentX >= columns || currentY < 0 || currentY >= rows) return;
+
+            if (tempCtx) {
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            }
+
+            switch (currentTool) {
+                case 'paint':
+                    updateTile(e);
+                    break;
+                case 'rect':
+                    drawPreviewRect(startX, startY, currentX, currentY, false);
+                    break;
+                case 'rectFill':
+                    drawPreviewRect(startX, startY, currentX, currentY, true);
+                    break;
+                case 'line':
+                    drawPreviewLine(startX, startY, currentX, currentY);
+                    break;
+            }
+        });;
+
+        mapCanvas.addEventListener("mouseup", (e) => {
+            if (!isDrawing) return;
+
+            const rect = mapCanvas.getBoundingClientRect();
+            const labelSpace = 20;
+
+            const endX = Math.floor((e.clientX - rect.left - labelSpace) / tileSize);
+            const endY = Math.floor((e.clientY - rect.top - labelSpace) / tileSize);
+
+            if (endX < 0 || endX >= columns || endY < 0 || endY >= rows) {
+                isDrawing = false;
+                removeTempCanvas();
+                return;
+            }
+
+            switch (currentTool) {
+                case 'rect':
+                    drawRect(startX, startY, endX, endY, false);
+                    break;
+                case 'rectFill':
+                    drawRect(startX, startY, endX, endY, true);
+                    break;
+                case 'line':
+                    drawLine(startX, startY, endX, endY);
+                    break;
+            }
+
+            isDrawing = false;
+            removeTempCanvas();
+            drawGrid();
+        });
+
+        function drawPreviewRect(x1, y1, x2, y2, filled) {
+            if (!tempCtx) return;
+
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+
+            const labelSpace = 20;
+            tempCtx.strokeStyle = 'rgba(0, 255, 0, 0.7)';
+            tempCtx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+
+            if (filled) {
+                tempCtx.fillRect(
+                    minX * tileSize + labelSpace, 
+                    minY * tileSize + labelSpace, 
+                    (maxX - minX + 1) * tileSize, 
+                    (maxY - minY + 1) * tileSize
+                );
+            }
+            
+            tempCtx.strokeRect(
+                minX * tileSize + labelSpace, 
+                minY * tileSize + labelSpace, 
+                (maxX - minX + 1) * tileSize, 
+                (maxY - minY + 1) * tileSize
+            );
+        }
+
+        function drawRect(x1, y1, x2, y2, filled) {
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    if (!filled && 
+                        (x === minX || x === maxX || y === minY || y === maxY)) {
+                        mapData[y][x] = eraseMode ? "0" : selectedTile;
+                    }
+                    if (filled) {
+                        mapData[y][x] = eraseMode ? "0" : selectedTile;
+                    }
+                }
+            }
+        }
+
+        function drawPreviewLine(x1, y1, x2, y2) {
+            if (!tempCtx) return;
+
+            const labelSpace = 20;
+            tempCtx.strokeStyle = 'rgba(0, 255, 0, 0.7)';
+            tempCtx.beginPath();
+            tempCtx.moveTo(
+                x1 * tileSize + tileSize/2 + labelSpace, 
+                y1 * tileSize + tileSize/2 + labelSpace
+            );
+            tempCtx.lineTo(
+                x2 * tileSize + tileSize/2 + labelSpace, 
+                y2 * tileSize + tileSize/2 + labelSpace
+            );
+            tempCtx.stroke();
+        }
+
+        function drawLine(x1, y1, x2, y2) {
+            // Bresenham's line algorithm
+            const dx = Math.abs(x2 - x1);
+            const dy = Math.abs(y2 - y1);
+            const sx = (x1 < x2) ? 1 : -1;
+            const sy = (y1 < y2) ? 1 : -1;
+            let err = dx - dy;
+
+            while (true) {
+                mapData[y1][x1] = eraseMode ? "0" : selectedTile;
+
+                if (x1 === x2 && y1 === y2) break;
+
+                const e2 = 2 * err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    x1 += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y1 += sy;
+                }
+            }
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (["1", "2", "3", "4", "5"].includes(e.key)) {
+                selectedTile = e.key;
+                eraseMode = false;
+                eraseModeText.innerText = "OFF";
+                const tileNames = {
+                    "1": "Floor",
+                    "2": "Platform",
+                    "3": "Wall",
+                    "4": "Cutscene",
+                    "5": "Ladder"
+                };
+                selectedTileText.innerText = `${e.key} (${tileNames[e.key]})`;
+            }
+            if (e.key.toLowerCase() === "e") {
+                toggleEraseMode();
+            }
+        });
+
+        function toggleEraseMode() {
+            eraseMode = !eraseMode;
+            eraseModeText.innerText = eraseMode ? "ON" : "OFF";
+        }
+
+        document.getElementById("eraseModeBtn").addEventListener("click", toggleEraseMode);
+
+        applySizeBtn.addEventListener("click", () => {
+            initializeMap();
+        });
+        
+        document.getElementById("backgroundImage").addEventListener("change", function(e) {
+            loadImage(e, "background");
+        });
+        
+        document.getElementById("tilesImage").addEventListener("change", function(e) {
+            loadImage(e, "tiles");
+        });
+        
+        document.getElementById("foregroundImage").addEventListener("change", function(e) {
+            loadImage(e, "foreground");
+        });
+        
+        document.getElementById("clearBackgroundBtn").addEventListener("click", function() {
+            backgroundImage = null;
+            drawBackgroundLayers();
+        });
+        
+        document.getElementById("clearTilesBtn").addEventListener("click", function() {
+            tilesImage = null;
+            drawBackgroundLayers();
+        });
+        
+        document.getElementById("clearForegroundBtn").addEventListener("click", function() {
+            foregroundImage = null;
+            drawBackgroundLayers();
+        });
+        
+        opacitySlider.addEventListener("input", function() {
+            opacityValue.textContent = this.value;
+            drawBackgroundLayers();
+        });
+        
+        function loadImage(event, layer) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    if (layer === "background") {
+                        backgroundImage = img;
+                    } else if (layer === "tiles") {
+                        tilesImage = img;
+                    } else if (layer === "foreground") {
+                        foregroundImage = img;
+                    }
+                    drawBackgroundLayers();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function compressHorizontalRanges(data, tileType) {
+            let result = [];
+            for (let y = 0; y < rows; y++) {
+                let start = null;
+                for (let x = 0; x <= columns; x++) {
+                    if (x < columns && data[y][x] === tileType) {
+                        if (start === null) start = x;
+                    } else if (start !== null) {
+                        result.push({ row: y, start, end: x - 1 });
+                        start = null;
+                    }
+                }
+            }
+            return result;
+        }
+        function compressVerticalRanges(data, tileType) {
+            let result = [];
+            for (let x = 0; x < columns; x++) {
+                let start = null;
+                for (let y = 0; y <= rows; y++) {
+                    if (y < rows && data[y][x] === tileType) {
+                        if (start === null) start = y;
+                    } else if (start !== null) {
+                        result.push({ column: x, startY: start, endY: y - 1 });
+                        start = null;
+                    }
+                }
+            }
+            return result;
+        }
+
+        function compressWallRanges(verticalRanges) {
+            const rangeGroups = {};
+            
+            verticalRanges.forEach(range => {
+                const key = `${range.startY}-${range.endY}`;
+                if (!rangeGroups[key]) {
+                    rangeGroups[key] = [];
+                }
+                rangeGroups[key].push(range.column);
+            });
+            
+            const result = [];
+            Object.entries(rangeGroups).forEach(([key, columns]) => {
+                const [startY, endY] = key.split('-').map(Number);
+                
+                columns.sort((a, b) => a - b);
+                
+                let startColumn = columns[0];
+                let prevColumn = columns[0];
+                
+                for (let i = 1; i <= columns.length; i++) {
+                    if (i === columns.length || columns[i] !== prevColumn + 1) {
+                        result.push({
+                            startColumn,
+                            endColumn: prevColumn,
+                            startY,
+                            endY
+                        });
+                        
+                        if (i < columns.length) {
+                            startColumn = columns[i];
+                        }
+                    }
+                    
+                    if (i < columns.length) {
+                        prevColumn = columns[i];
+                    }
+                }
+            });
+            
+            return result;
+        }
+
+        function compressVerticalThenHorizontal(data, tileType) {
+    const verticalRanges = [];
+    for (let x = 0; x < columns; x++) {
+        let start = null;
+        for (let y = 0; y <= rows; y++) {
+            if (y < rows && data[y][x] === tileType) {
+                if (start === null) start = y;
+            } else if (start !== null) {
+                verticalRanges.push({ column: x, startY: start, endY: y - 1 });
+                start = null;
+            }
+        }
+    }
+
+    return compressWallRanges(verticalRanges);
+}
+
+        function exportMap() {
+            const verticalWallRanges = compressVerticalRanges(mapData, "3");
+            const compressedWalls = compressWallRanges(verticalWallRanges);
+            const horizontalLadderRanges = compressHorizontalRanges(mapData, "5");
+            const compressedLadders = compressVerticalLadders(horizontalLadderRanges);
+            const backgroundImageData = backgroundImage ? backgroundCanvas.toDataURL() : null;
+    const tilesImageData = tilesImage ? tilesCanvas.toDataURL() : null;
+    const foregroundImageData = foregroundImage ? foregroundCanvas.toDataURL() : null;
+            
+    const jsonOutput = JSON.stringify({
+        mapName: "NewMap",
+        version: 1.1,
+        gravity: 1.2,
+        rows,
+        columns,
+        floorRows: compressVerticalThenHorizontal(mapData, "1"),
+        platformPositions: compressVerticalThenHorizontal(mapData, "2"),
+        wallRows: compressedWalls,
+        cutscenePositions: compressVerticalThenHorizontal(mapData, "4"),
+        ladderPositions: compressedLadders,
+        hasBackgroundImage: backgroundImage !== null,
+        hasTilesImage: tilesImage !== null,
+        hasForegroundImage: foregroundImage !== null
+    }, null, 2);
+
+            const blob = new Blob([jsonOutput], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "map.json";
+            a.click();
+            
+            if (backgroundImage || tilesImage || foregroundImage) {
+                const saveImages = confirm("Would you like to save the background images as well?");
+                if (saveImages) {
+                    if (backgroundImage) {
+                        const a = document.createElement("a");
+                        a.href = backgroundCanvas.toDataURL();
+                        a.download = "background.png";
+                        a.click();
+                    }
+                    if (tilesImage) {
+                        const a = document.createElement("a");
+                        a.href = tilesCanvas.toDataURL();
+                        a.download = "tileground.png";
+                        a.click();
+                    }
+                    if (foregroundImage) {
+                        const a = document.createElement("a");
+                        a.href = foregroundCanvas.toDataURL();
+                        a.download = "foreground.png";
+                        a.click();
+                    }
+                }
+            }
+        }
+
+        document.getElementById("exportBtn").addEventListener("click", exportMap);
+
+        function importMap(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+
+                    // Set new rows and columns
+                    mapRowsInput.value = importedData.rows || rows;
+                    mapColumnsInput.value = importedData.columns || columns;
+                    initializeMap();
+
+                    // Load map data
+                    // Handle horizontal ranges (floors, platforms, ladders)
+                    if (importedData.floorRows) {
+                        importedData.floorRows.forEach(({ row, start, end }) => {
+                            for (let x = start; x <= end; x++) mapData[row][x] = "1";
+                        });
+                    }
+                    
+                    if (importedData.platformPositions) {
+                        importedData.platformPositions.forEach(({ row, start, end }) => {
+                            for (let x = start; x <= end; x++) mapData[row][x] = "2";
+                        });
+                    }
+                    
+                    if (importedData.ladderPositions) {
+    importedData.ladderPositions.forEach((ladder) => {
+        if (ladder.startRow !== undefined) {
+            // New vertically compressed format
+            for (let y = ladder.startRow; y <= ladder.endRow; y++) {
+                for (let x = ladder.start; x <= ladder.end; x++) {
+                    mapData[y][x] = "5";
+                }
+            }
+        } else if (ladder.row !== undefined) {
+            // Horizontal ranges format
+            for (let x = ladder.start; x <= ladder.end; x++) {
+                mapData[ladder.row][x] = "5";
+            }
+        } else if (ladder.startX !== undefined) {
+            // Old format with individual positions
+            mapData[ladder.startY][ladder.startX] = "5";
+        }
+    });
+}
+
+                    // Handle wall ranges
+                    if (importedData.wallRows) {
+                        importedData.wallRows.forEach((wall) => {
+                            if (wall.startColumn !== undefined && wall.endColumn !== undefined) {
+                                // New format with horizontal compression
+                                for (let x = wall.startColumn; x <= wall.endColumn; x++) {
+                                    for (let y = wall.startY; y <= wall.endY; y++) {
+                                        mapData[y][x] = "3";
+                                    }
+                                }
+                            } else if (wall.column !== undefined) {
+                                // Old format with vertical compression only
+                                for (let y = wall.startY; y <= wall.endY; y++) {
+                                    mapData[y][wall.column] = "3";
+                                }
+                            }
+                        });
+                    }
+                    
+                    if (importedData.cutscenePositions) {
+                        importedData.cutscenePositions.forEach(({ row, start, end }) => {
+                            for (let x = start; x <= end; x++) mapData[row][x] = "4";
+                        });
+                    }
+                    
+                    if (importedData.ladderPositions) {
+                        // Handle both old and new format
+                        importedData.ladderPositions.forEach((ladder) => {
+                            if (ladder.row !== undefined) {
+                                // New format with ranges
+                                for (let x = ladder.start; x <= ladder.end; x++) {
+                                    mapData[ladder.row][x] = "5";
+                                }
+                            } else if (ladder.startX !== undefined) {
+                                // Old format with individual positions
+                                mapData[ladder.startY][ladder.startX] = "5";
+                            }
+                        });
+                    }
+                    drawGrid();
+                    
+                    // If the imported data mentions image files, prompt user to import them
+                    if (importedData.hasBackgroundImage || importedData.hasTilesImage || importedData.hasForegroundImage) {
+                        alert("This map has background images. Please import them separately.");
+                    }
+                } catch (error) {
+                    alert("Failed to import map: " + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function compressVerticalLadders(horizontalRanges) {
+    // Group ladder segments by their x-range (start-end)
+    const rangeGroups = {};
+    
+    horizontalRanges.forEach(range => {
+        const key = `${range.start}-${range.end}`;
+        if (!rangeGroups[key]) {
+            rangeGroups[key] = [];
+        }
+        rangeGroups[key].push(range.row);
+    });
+    
+    // Compress consecutive rows within each group
+    const result = [];
+    Object.entries(rangeGroups).forEach(([key, rows]) => {
+        const [start, end] = key.split('-').map(Number);
+        
+        // Sort rows numerically
+        rows.sort((a, b) => a - b);
+        
+        let startRow = rows[0];
+        let prevRow = rows[0];
+        
+        for (let i = 1; i <= rows.length; i++) {
+            // If we're at the end or there's a gap in the sequence
+            if (i === rows.length || rows[i] !== prevRow + 1) {
+                result.push({
+                    startRow,
+                    endRow: prevRow,
+                    start,
+                    end
+                });
+                
+                if (i < rows.length) {
+                    startRow = rows[i];
+                }
+            }
+            
+            if (i < rows.length) {
+                prevRow = rows[i];
+            }
+        }
+    });
+    
+    return result;
+}
+
+        document.getElementById("importFile").addEventListener("change", importMap);
+        document.getElementById("importBtn").addEventListener("click", () => {
+            document.getElementById("importFile").click();
+        });
+
+        // Initialize the map
+        initializeMap();
+    </script>
+</body>
+</html>
